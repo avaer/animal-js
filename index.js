@@ -44,6 +44,7 @@ const ANIMALS = [
   /* 'zombie',
   'zombie_brute', */
 ];
+const DATA_PATH = __dirname;
 const ANIMAL_SHADER = {
   uniforms: {
     theta: {
@@ -372,6 +373,7 @@ const animal = (img, model) => {
   return mesh;
 };
 animal.ANIMALS = ANIMALS;
+animal.DATA_PATH = DATA_PATH;
 animal.ANIMAL_SHADER = ANIMAL_SHADER;
 
 return animal;
