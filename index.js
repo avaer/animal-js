@@ -1,5 +1,49 @@
 module.exports = THREE => {
 
+const ANIMALS = [
+  /* 'ammonite', */
+  'badger',
+  'bear',
+  'beetle',
+  /* 'bigfish', */
+  'boar',
+  'bunny',
+  'chick',
+  'chicken',
+  'cow',
+  /* 'cubelet', */
+  'deer',
+  /* 'dungeon_master', */
+  'elephant',
+  /* 'fish',
+  'ghost', */
+  'giraffe',
+  /* 'gull', */
+  'horse',
+  'mammoth',
+  /* 'oerrki',
+  'penguin',
+  'piranha',
+  'pterodactyl', */
+  'rat',
+  'sheep',
+  'skunk',
+  'smallbird',
+  'spider',
+  /* 'swamplurker', */
+  'turtle',
+  /* 'trilobite', */
+  'velociraptor',
+  /* 'villager',
+  'walker',
+  'warthog',
+  'wasp',
+  'whale',
+  'witch', */
+  'wolf',
+  /* 'zombie',
+  'zombie_brute', */
+];
 const ANIMAL_SHADER = {
   uniforms: {
     theta: {
@@ -327,6 +371,7 @@ const animal = (img, model) => {
 
   return mesh;
 };
+animal.ANIMALS = ANIMALS;
 animal.ANIMAL_SHADER = ANIMAL_SHADER;
 
 return animal;
