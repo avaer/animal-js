@@ -44,7 +44,7 @@ const ANIMALS = [
   /* 'zombie',
   'zombie_brute', */
 ];
-const DATA_PATH = __dirname;
+const DATA_PATH = typeof __dirname !== 'undefined' ? __dirname : null;
 const ANIMAL_SHADER = {
   uniforms: {
     theta: {
