@@ -164,7 +164,7 @@ const _resArrayBuffer = res => {
     });
   }
 };
-const _requestImage = src => new Promise((accept, reject) => {
+const _requestImageBitmap = src => new Promise((accept, reject) => {
   if (typeof src === 'string') {
     const img = new Image();
 
@@ -180,7 +180,10 @@ const _requestImage = src => new Promise((accept, reject) => {
   } else {
     accept(src);
   }
-});
+})
+  .then(img => createImageBitmap(img, 0, 0, img.width, img.height, {
+    imageOrientation: 'flipY',
+  }));
 const _requestData = url => fetch(url)
   .then(_resArrayBuffer);
 const _requestModel = src => {
@@ -314,6 +317,9 @@ const animal = (img, model) => {
     THREE.UnsignedByteType,
     1
   );
+  texture.onUpload = () => {
+    texture.image = null;
+  };
   const material = zooMaterial;
 
   const mesh = new THREE.Mesh(geometry, material);
@@ -345,11 +351,11 @@ const animal = (img, model) => {
 
   const _load = () => {
     Promise.all([
-      _requestImage(img),
+      _requestImageBitmap(img),
       _requestModel(model),
     ])
       .then(([
-        img,
+        imageBitmap,
         model,
       ]) => {
         const {positions, normals, uvs, dys, dhs, indices, size} = model;
@@ -362,7 +368,7 @@ const animal = (img, model) => {
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
         geometry.boundingSphere.radius = Math.max(size.x, size.y, size.z);
 
-        texture.image = img;
+        texture.image = imageBitmap;
         texture.needsUpdate = true;
 
         mesh.size.copy(size);
