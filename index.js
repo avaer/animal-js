@@ -184,7 +184,9 @@ const _requestImageBitmap = src => new Promise((accept, reject) => {
   .then(img => createImageBitmap(img, 0, 0, img.width, img.height, {
     imageOrientation: 'flipY',
   }));
-const _requestData = url => fetch(url)
+const _requestData = url => fetch(url, {
+  credentials: 'include',
+})
   .then(_resArrayBuffer);
 const _requestModel = src => {
   if (typeof src === 'string') {
