@@ -295,35 +295,18 @@ cleanups.push(() => {
     });
   }); */
 
-const animal = (img, model) => {
-  const geometry = new THREE.BufferGeometry();
-  geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
-  geometry.addAttribute('normal', new THREE.BufferAttribute(new Float32Array(0), 3));
-  geometry.addAttribute('uv', new THREE.BufferAttribute(new Float32Array(0), 2));
-  geometry.addAttribute('dy', new THREE.BufferAttribute(new Float32Array(0), 4));
-  geometry.addAttribute('dh', new THREE.BufferAttribute(new Float32Array(0), 4));
-  geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(0), 1));
-  geometry.boundingSphere = new THREE.Sphere(
-    new THREE.Vector3(0, 0, 0),
-    1
-  );
+class ModelSpec {
+  constructor(geometry, texture, size) {
+    this.geometry = geometry;
+    this.texture = texture;
+    this.size = size;
+  }
+}
 
-  const texture = new THREE.Texture(
-    null,
-    THREE.UVMapping,
-    THREE.ClampToEdgeWrapping,
-    THREE.ClampToEdgeWrapping,
-    THREE.NearestFilter,
-    THREE.NearestFilter,
-    THREE.RGBAFormat,
-    THREE.UnsignedByteType,
-    1
-  );
-  texture.onUpload = () => {
-    texture.image = null;
-  };
+const animal = modelSpec => {
+  const {geometry, texture, size} = modelSpec;
+
   const material = zooMaterial;
-
   const mesh = new THREE.Mesh(geometry, material);
   // mesh.frustumCulled = false;
 
@@ -343,42 +326,61 @@ const animal = (img, model) => {
     material.uniforms.headRotation.value.set(headRotation.x, headRotation.y, headRotation.z, headRotation.w);
     material.uniforms.theta.value = Math.sin(((startOffset + now) % angleRate) / angleRate * Math.PI * 2) * 0.75; */
   };
-
-  mesh.size = new THREE.Vector3();
-
+  mesh.size = size;
   mesh.destroy = () => {
-    geometry.dispose();
-    texture.dispose();
+    /* geometry.dispose();
+    texture.dispose(); */
   };
-
-  const _load = () => {
-    Promise.all([
-      _requestImageBitmap(img),
-      _requestModel(model),
+  return mesh;
+};
+animal.requestModelSpecs = ({
+  imgUrlPrefix = '/',
+  modelUrlPrefix = '/',
+} = {}) => {
+  const result = {};
+  const promises = [];
+  for (let i = 0; i < ANIMALS.length; i++) {
+    const skinName = ANIMALS[i];
+    const promise = Promise.all([
+      _requestModel(`${modelUrlPrefix}${skinName}.dat`),
+      _requestImageBitmap(`${imgUrlPrefix}${skinName}.png`),
     ])
       .then(([
-        imageBitmap,
         model,
+        img,
       ]) => {
         const {positions, normals, uvs, dys, dhs, indices, size} = model;
-
+        const geometry = new THREE.BufferGeometry();
         geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
         geometry.addAttribute('uv', new THREE.BufferAttribute(uvs, 2));
         geometry.addAttribute('dy', new THREE.BufferAttribute(dys, 4));
         geometry.addAttribute('dh', new THREE.BufferAttribute(dhs, 4));
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-        geometry.boundingSphere.radius = Math.max(size.x, size.y, size.z);
+        geometry.boundingSphere = new THREE.Sphere(
+          new THREE.Vector3(),
+          Math.max(size.x, size.y, size.z)
+        );
 
-        texture.image = imageBitmap;
+        const texture = new THREE.Texture(
+          img,
+          THREE.UVMapping,
+          THREE.ClampToEdgeWrapping,
+          THREE.ClampToEdgeWrapping,
+          THREE.NearestFilter,
+          THREE.NearestFilter,
+          THREE.RGBAFormat,
+          THREE.UnsignedByteType,
+          1
+        );
         texture.needsUpdate = true;
 
-        mesh.size.copy(size);
+        result[skinName] = new ModelSpec(geometry, texture, size);
       });
-  };
-  _load();
-
-  return mesh;
+    promises.push(promise);
+  }
+  return Promise.all(promises)
+    .then(() => result);
 };
 animal.ANIMALS = ANIMALS;
 animal.DATA_PATH = DATA_PATH;
