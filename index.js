@@ -1,7 +1,8 @@
 module.exports = THREE => {
 
 const ANIMALS = [
-  'raptor',
+  'chicken',
+  // 'raptor',
 ];
 const DATA_PATH = typeof __dirname !== 'undefined' ? __dirname : null;
 const ANIMAL_SHADER = {
