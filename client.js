@@ -14,10 +14,6 @@ const ANIMAL_SHADER = {
       type: 'v4',
       value: new THREE.Vector4(),
     },
-    hit: {
-      type: 'f',
-      value: 0,
-    },
     map: {
       type: 't',
       value: null,
@@ -66,17 +62,12 @@ const ANIMAL_SHADER = {
   `,
   fragmentShader: `\
     uniform sampler2D map;
-    uniform float hit;
     varying vec3 vViewPosition;
     varying vec2 vUv;
     void main() {
       vec4 diffuseColor = texture2D(map, vUv);
       if (diffuseColor.a < 0.5) {
         discard;
-      }
-
-      if (hit > 0.5) {
-        diffuseColor.r += 0.3;
       }
 
       vec3 fdx = vec3( dFdx( vViewPosition.x ), dFdx( vViewPosition.y ), dFdx( vViewPosition.z ) );
@@ -213,17 +204,6 @@ const ANIMAL_SHADER = {
   }
 } */
 
-const mobMaterial = new THREE.ShaderMaterial({
-  uniforms: THREE.UniformsUtils.clone(ANIMAL_SHADER.uniforms),
-  vertexShader: ANIMAL_SHADER.vertexShader,
-  fragmentShader: ANIMAL_SHADER.fragmentShader,
-  // transparent: true,
-  extensions: {
-    derivatives: true,
-  },
-});
-mobMaterial.volatile = true;
-
 const _resArrayBuffer = res => {
   if (res.status >= 200 && res.status < 300) {
     return res.arrayBuffer();
@@ -234,7 +214,7 @@ const _resArrayBuffer = res => {
     });
   }
 };
-const _requestImageBitmap = url => new Promise((accept, reject) => {
+const _requestImage = url => new Promise((accept, reject) => {
   const img = new Image();
 
   img.onload = () => {
@@ -246,10 +226,7 @@ const _requestImageBitmap = url => new Promise((accept, reject) => {
 
   img.crossOrigin = 'Anonymous';
   img.src = url;
-})
-  .then(img => createImageBitmap(img, 0, 0, img.width, img.height, {
-    imageOrientation: 'flipY',
-  }));
+});
 const _requestData = url => fetch(url, {
   credentials: 'include',
 })
@@ -282,16 +259,12 @@ const _requestModel = url => _requestData(url)
     const dys = new Float32Array(arrayBuffer, byteOffset, numDys);
     byteOffset += numDys * 4;
 
-    const size = new THREE.Vector3().fromArray(new Float32Array(arrayBuffer, byteOffset, 3));
-    byteOffset += 3 * 4;
-
     return {
       positions,
       uvs,
       indices,
       skinIndices,
       dys,
-      size,
     };
   });
 
@@ -318,7 +291,7 @@ class ModelSpec {
 const animal = modelSpec => {
   const {geometry, texture, size} = modelSpec;
 
-  const material = mobMaterial;
+  const material = zooMaterial;
   const mesh = new THREE.Mesh(geometry, material);
   // mesh.frustumCulled = false;
 
@@ -361,16 +334,16 @@ animal.requestModelSpecs = ({
         model,
         img,
       ]) => {
-        const {positions, uvs, dys, indices, skinIndices, size} = model;
+        const {positions, uvs, dys, indices, skinIndices} = model;
         const geometry = new THREE.BufferGeometry();
         geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.addAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-        geometry.addAttribute('dy', new THREE.BufferAttribute(dys, 3));
-        geometry.addAttribute('skinIndex', new THREE.BufferAttribute(skinIndices, 1));
+        geometry.addAttribute('dy', new THREE.BufferAttribute(dys, 4));
+        geometry.addAttribute('skinIndex', new THREE.BufferAttribute(skinIndices, 4));
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
         geometry.boundingSphere = new THREE.Sphere(
           new THREE.Vector3(),
-          Math.sqrt(size.x*size.x + size.y*size.y + size.z*size.z)
+          Math.max(size.x, size.y, size.z)
         );
 
         const texture = new THREE.Texture(
