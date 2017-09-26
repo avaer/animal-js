@@ -1,8 +1,24 @@
 module.exports = THREE => {
 
 const ANIMALS = [
+  'bear',
+  'bee',
+  'bird',
+  'bunny',
+  'cow',
   'chicken',
-  // 'raptor',
+  'crocodile',
+  'elephant',
+  'fish',
+  'gull',
+  'horse',
+  'raptor',
+  'penguin',
+  'piranha',
+  'rat',
+  'turtle',
+  'wolf',
+  'whale',
 ];
 const DATA_PATH = typeof __dirname !== 'undefined' ? __dirname : null;
 const ANIMAL_SHADER = {
@@ -58,6 +74,10 @@ const ANIMAL_SHADER = {
         pos = pos - dy + rotateAxisAngle(dy, vec3(1.0, 0.0, 0.0), -theta);
       } else if (skinIndex == 2.0 || skinIndex == 3.0) {
         pos = pos - dy + rotateAxisAngle(dy, vec3(1.0, 0.0, 0.0), theta);
+      } else if (skinIndex == 5.0) {
+        pos = pos - dy + rotateAxisAngle(dy, vec3(0.0, 0.0, 1.0), theta);
+      } else if (skinIndex == 6.0) {
+        pos = pos - dy + rotateAxisAngle(dy, vec3(0.0, 0.0, 1.0), -theta);
       }
       vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
       gl_Position = projectionMatrix * mvPosition;
@@ -259,7 +279,7 @@ const _requestModel = url => _requestData(url)
   .then(arrayBuffer => {
     let byteOffset = 0;
 
-    const header = new Uint32Array(arrayBuffer);
+    const header = new Uint32Array(arrayBuffer, byteOffset, 5);
     let index = 0;
     const numPositions = header[index++];
     const numUvs = header[index++];
@@ -276,6 +296,7 @@ const _requestModel = url => _requestData(url)
 
     const indices = new Uint16Array(arrayBuffer, byteOffset, numIndices);
     byteOffset += numIndices * 2;
+    byteOffset = _align(byteOffset, 4);
 
     const skinIndices = new Float32Array(arrayBuffer, byteOffset, numSkinIndices);
     byteOffset += numSkinIndices * 4;
@@ -397,6 +418,14 @@ animal.requestModelSpecs = ({
 animal.ANIMALS = ANIMALS;
 animal.DATA_PATH = DATA_PATH;
 animal.ANIMAL_SHADER = ANIMAL_SHADER;
+
+const _align = (n, alignment) => {
+  let alignDiff = n % alignment;
+  if (alignDiff > 0) {
+    n += alignment - alignDiff;
+  }
+  return n;
+};
 
 return animal;
 
