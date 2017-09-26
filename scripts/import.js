@@ -18,7 +18,7 @@ const boneIndices = new Float32Array(positions.length / 3);
 const boneLines = s.split('\n').map(l => {
   const match = l.match(/^(\S+) <Vector \((.+), (.+), (.+)\)> <Vector \((.+), (.+), (.+)\)>$/);
   if (match) {
-    const name = match[1];
+    const boneName = match[1];
     const startX = parseFloat(match[2]);
     const startY = parseFloat(match[3]);
     const startZ = parseFloat(match[4]);
@@ -26,7 +26,8 @@ const boneLines = s.split('\n').map(l => {
     const endY = parseFloat(match[6]);
     const endZ = parseFloat(match[7]);
     const line = new THREE.Line3(new THREE.Vector3(startX, startY, startZ), new THREE.Vector3(endX, endY, endZ));
-    line.name = name;
+    line.name = boneName;
+    line.distance = 0.7;
     return line;
   } else {
     return null;
@@ -38,9 +39,22 @@ const _getNearestBoneName = p => {
   for (let i = 0; i < boneLines.length; i++) {
     const boneLine = boneLines[i];
     const distance = boneLine.closestPointToPoint(p, true, localVector2).distanceTo(p);
-    if (distance <= 0.7 && distance < bestDistance) {
+    if (distance <= boneLine.distance && distance < bestDistance) {
       bestDistance = distance;
       bestName = boneLine.name;
+    }
+  }
+  if (bestName === null) {
+    for (let i = 0; i < boneLines.length; i++) {
+      const boneLine = boneLines[i];
+      const distance = boneLine.closestPointToPoint(p, true, localVector2).distanceTo(p);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestName = boneLine.name;
+      }
+    }
+    if (!(bestName === 'Head' || bestName === 'Neck')) {
+      bestName = null;
     }
   }
   return bestName;
@@ -49,13 +63,13 @@ for (let i = 0; i < positions.length / 3; i++) {
   const boneName = _getNearestBoneName(localVector.fromArray(positions, i * 3));
   if (boneName === 'Head' || boneName === 'Neck') {
     boneIndices[i] = 0;
-  } else if (boneName === 'Thigh.l' || boneName === 'Leg.l') {
+  } else if (boneName === 'Thigh.l' || boneName === 'Leg.l' || boneName === 'BackLeg.l') {
     boneIndices[i] = 1;
-  } else if (boneName === 'Thigh.r' || boneName === 'Leg.r') {
+  } else if (boneName === 'Thigh.r' || boneName === 'Leg.r' || boneName === 'BackLeg.r') {
     boneIndices[i] = 2;
-  } else if (boneName === 'Shoulderjoint.l' || boneName === 'Hand.l') {
+  } else if (boneName === 'Shoulderjoint.l' || boneName === 'Hand.l' || boneName === 'FrontLeg.l') {
     boneIndices[i] = 3;
-  } else if (boneName === 'Shoulderjoint.r' || boneName === 'Hand.r') {
+  } else if (boneName === 'Shoulderjoint.r' || boneName === 'Hand.r' || boneName === 'FrontLeg.r') {
     boneIndices[i] = 4;
   } else {
     boneIndices[i] = -1;
@@ -73,13 +87,23 @@ const _getBackBone = boneIndex => {
   return result;
 };
 const _getTopBone = boneIndex => {
-  const result = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  let topY = -Infinity;
+  const acc = new THREE.Vector3();
+  let numVectors = 0;
   for (let i = 0; i < positions.length / 3; i++) {
-    if (boneIndices[i] === boneIndex && positions[i * 3 + 1] > result.y) {
-      result.fromArray(positions, i * 3);
+    if (boneIndices[i] === boneIndex) {
+      localVector.fromArray(positions, i * 3);
+      if (localVector.y > topY) {
+        topY = localVector.y;
+      }
+      acc.add(localVector);
+      numVectors++;
     }
   }
-  return result;
+  if (numVectors > 0) {
+    acc.divideScalar(numVectors);
+  }
+  return new THREE.Vector3(acc.x, topY, acc.z);
 };
 const headBackBone = _getBackBone(0);
 const leftLegTopBone = _getTopBone(1);
