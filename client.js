@@ -1,7 +1,24 @@
 module.exports = THREE => {
 
 const ANIMALS = [
+  'bear',
+  'bee',
+  'bird',
+  'bunny',
+  'chicken',
+  'cow',
+  'crocodile',
+  'elephant',
+  'fish',
+  'gull',
+  'horse',
+  'penguin',
+  'piranha',
   'raptor',
+  'rat',
+  'turtle',
+  'whale',
+  'wolf',
 ];
 const DATA_PATH = typeof __dirname !== 'undefined' ? __dirname : null;
 const ANIMAL_SHADER = {
